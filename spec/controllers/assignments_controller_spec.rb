@@ -795,7 +795,6 @@ describe AssignmentsController do
           context "when the course has the 'Filter SpeedGrader by Student Group' setting enabled" do
             before(:once) do
               @course.root_account.enable_feature!(:filter_speed_grader_by_student_group)
-              @course.enable_feature!(:new_gradebook)
               @course.update!(filter_speed_grader_by_student_group: true)
 
               category = @course.group_categories.create!(name: "category")
@@ -833,7 +832,6 @@ describe AssignmentsController do
         context "when filter_speed_grader_by_student_group? is true" do
           before :once do
             @course.root_account.enable_feature!(:filter_speed_grader_by_student_group)
-            @course.enable_feature!(:new_gradebook)
             @course.update!(filter_speed_grader_by_student_group: true)
 
             category = @course.group_categories.create!(name: "category")
@@ -858,7 +856,7 @@ describe AssignmentsController do
           it "includes the gradebook settings student group id if the group is valid for this assignment" do
             first_group_id = @course.groups.first.id.to_s
             @teacher.preferences[:gradebook_settings] = {
-              @course.id => {
+              @course.global_id => {
                 'filter_rows_by' => {
                   'student_group_id' => first_group_id
                 }
@@ -870,7 +868,7 @@ describe AssignmentsController do
 
           it "does not set selected_student_group_id if the selected group is not eligible for this assignment" do
             @teacher.preferences[:gradebook_settings] = {
-              @course.id => {
+              @course.global_id => {
                 'filter_rows_by' => {
                   'student_group_id' => @course.groups.first.id.to_s
                 }
@@ -913,7 +911,7 @@ describe AssignmentsController do
             @assignment.update!(submission_types: "external_tool", external_tool_tag: ContentTag.new)
             first_group_id = @course.groups.first.id.to_s
             @teacher.preferences[:gradebook_settings] = {
-              @course.id => {
+              @course.global_id => {
                 'filter_rows_by' => {
                   'student_group_id' => first_group_id
                 }
@@ -1042,7 +1040,7 @@ describe AssignmentsController do
 
       describe 'anonymize_students' do
         it "is included in the response" do
-          put 'toggle_mute', params: { course_id: @course.id, assignment_id: @assignment.id, status: true }, format: 'json'
+          put 'toggle_mute', params: { course_id: @course.id, assignment_id: @assignment.id, status: !@assignment.muted }, format: 'json'
           assignment_json = json_parse(response.body)['assignment']
           expect(assignment_json).to have_key('anonymize_students')
         end
@@ -1050,20 +1048,20 @@ describe AssignmentsController do
         it "is true if the assignment is anonymous and muted" do
           @assignment.update!(anonymous_grading: true)
           @assignment.unmute!
-          put 'toggle_mute', params: { course_id: @course.id, assignment_id: @assignment.id, status: true }, format: 'json'
+          put 'toggle_mute', params: { course_id: @course.id, assignment_id: @assignment.id, status: !@assignment.muted }, format: 'json'
           assignment_json = json_parse(response.body)['assignment']
           expect(assignment_json.fetch('anonymize_students')).to be true
         end
 
         it "is false if the assignment is anonymous and unmuted" do
           @assignment.update!(anonymous_grading: true)
-          put 'toggle_mute', params: { course_id: @course.id, assignment_id: @assignment.id, status: false }, format: 'json'
+          put 'toggle_mute', params: { course_id: @course.id, assignment_id: @assignment.id, status: !@assignment.muted }, format: 'json'
           assignment_json = json_parse(response.body)['assignment']
           expect(assignment_json.fetch('anonymize_students')).to be false
         end
 
         it "is false if the assignment is not anonymous" do
-          put 'toggle_mute', params: { course_id: @course.id, assignment_id: @assignment.id, status: true }, format: 'json'
+          put 'toggle_mute', params: { course_id: @course.id, assignment_id: @assignment.id, status: !@assignment.muted }, format: 'json'
           assignment_json = json_parse(response.body)['assignment']
           expect(assignment_json.fetch('anonymize_students')).to be false
         end
@@ -1331,6 +1329,13 @@ describe AssignmentsController do
       user_session(@student)
       get 'edit', params: {:course_id => @course.id, :id => @assignment.id}
       expect(assigns[:assignment]).to eql(@assignment)
+    end
+
+    it "should set 'ROOT_OUTCOME_GROUP' in js_env" do
+      user_session @teacher
+      get 'edit', params: {:course_id => @course.id, :id => @assignment.id}
+
+      expect(assigns[:js_env][:ROOT_OUTCOME_GROUP]).not_to be_nil
     end
 
     it "bootstraps the correct assignment info to js_env" do

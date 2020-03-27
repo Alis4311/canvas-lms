@@ -28,14 +28,14 @@ describe "/quizzes/quizzes/show" do
     expect(response).not_to be_nil
   end
 
-  it "should render a notice instead of grades if muted" do
+  it "should render a notice instead of grades when grades have not been posted" do
     course_with_student(:active_all => true)
     quiz = @course.quizzes.create
     quiz.workflow_state = "available"
     quiz.save!
     quiz.reload
-    quiz.assignment.mute!
-    quiz.assignment.grade_student(@student, grade: 5, grader: @teacher)
+    quiz.assignment.ensure_post_policy(post_manually: true)
+    quiz.assignment.grade_student(@student, grade: 5, grader: @teacher).first
     submission = quiz.quiz_submissions.create
     submission.score = 5
     submission.user = @student
@@ -162,7 +162,7 @@ describe "/quizzes/quizzes/show" do
     quiz.workflow_state = 'available'
     quiz.save!
     quiz.reload
-    quiz.assignment.mute!
+    quiz.assignment.ensure_post_policy(post_manually: true)
     quiz.assignment.grade_student(@student, grade: 5, grader: @teacher)
     submission = quiz.quiz_submissions.create
     submission.score = 5
@@ -179,4 +179,3 @@ describe "/quizzes/quizzes/show" do
     expect(response).to include 'preview of the draft version'
   end
 end
-

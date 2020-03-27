@@ -157,8 +157,7 @@ describe Message do
     describe "course nicknames" do
       before(:once) do
         course_with_student(:active_all => true, :course_name => 'badly-named-course')
-        @student.course_nicknames[@course.id] = 'student-course-nick'
-        @student.save!
+        @student.set_preference(:course_nicknames, @course.id, 'student-course-nick')
       end
 
       def check_message(message, asset)
@@ -343,6 +342,45 @@ describe Message do
 
       before do
         allow(Canvas::Twilio).to receive(:enabled?).and_return(true)
+      end
+
+      context 'with the deprecate_sms feature enabled' do
+        before :each do
+          @user.account.enable_feature!(:deprecate_sms)
+        end
+
+        after :each do
+          @user.account.disable_feature!(:deprecate_sms)
+        end
+
+        it "allows whitelisted notification types" do
+          message_model(
+            dispatch_at: Time.now,
+            workflow_state: 'staged',
+            to: '+18015550100',
+            updated_at: Time.now.utc - 11.minutes,
+            path_type: 'sms',
+            notification_name: 'Assignment Graded',
+            user: @user
+          )
+          expect(@message).to receive(:deliver_via_sms)
+          @message.deliver
+        end
+
+        it "does not deliver notification types not on the whitelist" do
+          message_model(
+            dispatch_at: Time.now,
+            workflow_state: 'staged',
+            to: '+18015550100',
+            updated_at: Time.now.utc - 11.minutes,
+            path_type: 'sms',
+            notification_name: 'Conversation Message',
+            user: @user
+          )
+          expect(@message).to receive(:deliver_via_sms).never
+          @message.deliver
+        end
+
       end
 
       it "uses Twilio for E.164 paths" do

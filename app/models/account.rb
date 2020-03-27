@@ -138,6 +138,7 @@ class Account < ActiveRecord::Base
   validates :workflow_state, presence: true
   validate :no_active_courses, if: lambda { |a| a.workflow_state_changed? && !a.active? }
   validate :no_active_sub_accounts, if: lambda { |a| a.workflow_state_changed? && !a.active? }
+  validate :validate_help_links, if: lambda { |a| a.settings_changed? }
 
   include StickySisFields
   are_sis_sticky :name, :parent_account_id
@@ -149,10 +150,13 @@ class Account < ActiveRecord::Base
 
   def default_locale(recurse = false)
     result = read_attribute(:default_locale)
-    if recurse
-      result ||= Rails.cache.fetch(['default_locale', self.global_id].cache_key) do
-        parent_account.default_locale(true) if parent_account
+    if recurse && !result && parent_account
+      unless instance_variable_defined?(:@cached_parent_locale)
+        @cached_parent_locale = Rails.cache.fetch(['default_locale', self.global_id].cache_key) do
+          parent_account.default_locale(true)
+        end
       end
+      result = @cached_parent_locale
     end
     result = nil unless I18n.locale_available?(result)
     result
@@ -764,7 +768,8 @@ class Account < ActiveRecord::Base
     end
 
     if starting_account_id
-      Shackles.activate(:slave) do
+      shackles_env = Account.connection.open_transactions == 0 ? :slave : Shackles.environment
+      Shackles.activate(shackles_env) do
         chain.concat(Shard.shard_for(starting_account_id).activate do
           Account.find_by_sql(<<-SQL)
                 WITH RECURSIVE t AS (
@@ -1220,6 +1225,15 @@ class Account < ActiveRecord::Base
       self.auth_discovery_url = value
     rescue URI::Error, ArgumentError
       errors.add(:discovery_url, t('errors.invalid_discovery_url', "The discovery URL is not valid" ))
+    end
+  end
+
+  def validate_help_links
+    links = self.settings[:custom_help_links]
+    return if links.blank?
+    link_errors = HelpLinks.validate_links(links)
+    link_errors.each do |link_error|
+      errors.add(:custom_help_links, link_error)
     end
   end
 

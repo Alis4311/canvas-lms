@@ -993,7 +993,7 @@ class UsersController < ApplicationController
   #         "course_id"=>12942,
   #         "submission_types"=>["none"],
   #         // [DEPRECATED] This property is deprecated, effective 2020-06-03 (notice given 2020-02-26):
-  #         // Use hidden_submissions_count to determine whether an assignment has feedback
+  #         // A new attribute will be included in a future release to determine whether an assignment has feedback
   #         // that has not been posted to students.
   #         "muted"=>false,
   #         "needs_grading_count"=>0,
@@ -1582,7 +1582,9 @@ class UsersController < ApplicationController
       return render(json: { :message => "Invalid Page Name Provided" }, status: :bad_request)
     end
 
-    user.new_user_tutorial_statuses[params[:page_name]] = value_to_boolean(params[:collapsed])
+    statuses = user.new_user_tutorial_statuses
+    statuses[params[:page_name]] = value_to_boolean(params[:collapsed])
+    user.set_preference(:new_user_tutorial_statuses, statuses)
 
     respond_to do |format|
       format.json do
@@ -1690,16 +1692,17 @@ class UsersController < ApplicationController
       return render(json: { :message => "Invalid Hexcode Provided" }, status: :bad_request)
     end
 
+    colors = user.custom_colors
     user.shard.activate do
       # translate asset string to be relative to user's shard
       unless params[:hexcode].nil?
-        user.custom_colors[context.asset_string] = normalize_hexcode(params[:hexcode])
+        colors[context.asset_string] = normalize_hexcode(params[:hexcode])
       end
 
       respond_to do |format|
         format.json do
-          if user.save
-            render(json: { hexcode: user.custom_colors[context.asset_string]})
+          if user.set_preference(:custom_colors, colors)
+            render(json: { hexcode: colors[context.asset_string]})
           else
             render(json: user.errors, status: :bad_request)
           end
@@ -1773,10 +1776,13 @@ class UsersController < ApplicationController
       position = Integer(val) rescue nil
       if position.nil?
         return render(json: { :message => "Invalid position provided" }, status: :bad_request)
+      elsif position.abs > 1_000
+        # validate that the value used is less than unreasonable, but without any real effort
+        return render(json: { message: "Position #{position} is too high. Your dashboard cards can probably be sorted with numbers 1-5, you could even use a 0." }, status: :bad_request)
       end
     end
 
-    user.dashboard_positions = user.dashboard_positions.merge(params[:dashboard_positions].to_unsafe_h)
+    user.set_dashboard_positions(user.dashboard_positions.merge(params[:dashboard_positions].to_unsafe_h))
 
     respond_to do |format|
       format.json do
@@ -2464,9 +2470,11 @@ class UsersController < ApplicationController
   #          -H 'Authorization: Bearer <token>'
   #
   # @argument include[] [String, "assignment"]
-  #   Associations to include with the group.
+  #   Associations to include with the group
   # @argument only_current_enrollments [boolean]
   #   Returns submissions for only currently active enrollments
+  # @argument only_published_assignments [boolean]
+  #   Returns submissions for only published assignments
   #
   # @returns [Submission]
   #
@@ -2475,6 +2483,7 @@ class UsersController < ApplicationController
     if authorized_action(@user, @current_user, :read_grades)
       collections = []
       only_current_enrollments = value_to_boolean(params[:only_current_enrollments])
+      only_published_assignments = value_to_boolean(params[:only_published_assignments])
 
       # Plannable Bookmarker enables descending order
       bookmarker = Plannable::Bookmarker.new(Submission, true, :graded_at, :id)
@@ -2484,7 +2493,11 @@ class UsersController < ApplicationController
         else
           Submission.all
         end
-        collections << [Shard.current.id, BookmarkedCollection.wrap(bookmarker, submissions.for_user(@user).graded)]
+        if only_published_assignments
+          submissions = submissions.joins(:assignment).merge(Assignment.published)
+        end
+        submissions = submissions.for_user(@user).graded
+        collections << [Shard.current.id, BookmarkedCollection.wrap(bookmarker, submissions)]
       end
 
       scope = BookmarkedCollection.merge(*collections)

@@ -5,6 +5,9 @@
     "add_8523c19b": {
         "message": "Dodaj"
     },
+    "add_another_f4e50d57": {
+        "message": "Dodaj kolejne"
+    },
     "add_cc_subtitles_55f0394e": {
         "message": "Dodaj CC/napisy"
     },
@@ -113,6 +116,9 @@
     "audio_player_for_title_20cc70d": {
         "message": "Odtwarzacz audio dla { title }"
     },
+    "auto_saved_content_exists_would_you_like_to_load_t_fee528f2": {
+        "message": "Istnieje automatycznie zapisana zawartość. Czy wolisz wczytać automatyczną zawartość?"
+    },
     "automatically_open_an_in_line_preview_preview_disp_ed784ffe": {
         "message": "Automatycznie otwórz pogląd w wierszu. (podgląd zostanie wyświetlony po zapisaniu)"
     },
@@ -143,14 +149,23 @@
     "clear_selected_file_82388e50": {
         "message": "Usuń wybrany plik"
     },
+    "clear_selected_file_filename_2fe8a58e": {
+        "message": "Usuń wybrany plik: { filename }"
+    },
     "click_any_page_to_insert_a_link_to_that_page_ac920c02": {
         "message": "Kliknij dowolną stronę, aby umieścić do niej łącze."
     },
     "click_to_embed_imagename_c41ea8df": {
         "message": "Kliknij, aby osadzić { imageName }"
     },
+    "click_to_hide_preview_3c707763": {
+        "message": "Kliknij, aby ukryć podgląd"
+    },
     "click_to_insert_a_link_into_the_editor_c19613aa": {
         "message": "Kliknij, aby wstawić łącze do edytora."
+    },
+    "click_to_show_preview_faa27051": {
+        "message": "Kliknij, aby wyświetlić podgląd"
     },
     "close_a_menu_or_dialog_also_returns_you_to_the_edi_739079e6": {
         "message": "Zamknij menu lub okno dialogowe. Przywraca do obszaru edytora"
@@ -299,6 +314,9 @@
     "display_text_link_opens_in_a_new_tab_75e9afc9": {
         "message": "Wyświetl łącze tekstowe (otwiera się w nowej karcie)"
     },
+    "document_678cd7bf": {
+        "message": "Dokument"
+    },
     "documents_81393201": {
         "message": "Dokumenty"
     },
@@ -364,6 +382,12 @@
     },
     "embed_video_code_703e10f2": {
         "message": "Osadź kod wideo"
+    },
+    "embedded_content_aaeb4d3d": {
+        "message": "osadzona zawartość"
+    },
+    "equation_1c5ac93c": {
+        "message": "Równanie"
     },
     "error_loading_grades_e0b38f4d": {
         "message": "Błąd podczas wczytywania ocen"
@@ -434,6 +458,9 @@
     "formatting_5b143aa8": {
         "message": "Formatowanie"
     },
+    "found_auto_saved_content_3f6e4ca5": {
+        "message": "Odnaleziono automatycznie zapisaną zawartość"
+    },
     "found_count_plural_0_results_one_result_other_resu_46aeaa01": {
         "message": "Odnaleziono { count, plural,\n     =0 {# wyników}\n    one {# wynik}\n  other {# wyników}\n}"
     },
@@ -479,6 +506,9 @@
     "height_69b03e15": {
         "message": "Wysokość"
     },
+    "image_8ad06": {
+        "message": "Zdjęcie"
+    },
     "image_options_5412d02c": {
         "message": "Opcje obrazu"
     },
@@ -490,6 +520,9 @@
     },
     "increase_indent_6d550a4a": {
         "message": "Zwiększ wcięcie"
+    },
+    "insert_593145ef": {
+        "message": "Wstaw"
     },
     "insert_equella_links_49a8dacd": {
         "message": "Wstaw łącza Equella"
@@ -647,6 +680,12 @@
     "no_due_dates_assigned_e8f5bac8": {
         "message": "Brak ustawionych terminów"
     },
+    "no_e16d9132": {
+        "message": "Nie"
+    },
+    "no_file_chosen_9a880793": {
+        "message": "Nie wybrano pliku"
+    },
     "no_grade_3b4d7f3e": {
         "message": "Brak oceny"
     },
@@ -749,6 +788,9 @@
     "preformatted_d0670862": {
         "message": "Wstępnie formatowane"
     },
+    "preview_53003fd2": {
+        "message": "Podgląd"
+    },
     "preview_a3f8f854": {
         "message": "PODGLĄD"
     },
@@ -790,6 +832,9 @@
     },
     "replies_4a8577c8": {
         "message": "Odpowiedzi"
+    },
+    "restore_auto_save_deccd84b": {
+        "message": "Przywrócić automatycznie zapisaną zawartość?"
     },
     "rich_content_editor_2708ef21": {
         "message": "Edytor wzbogaconej zawartości"
@@ -901,6 +946,9 @@
     },
     "superscript_8cb349a2": {
         "message": "Indeks górny"
+    },
+    "supported_file_types_srt_or_webvtt_7d827ed": {
+        "message": "Obsługiwane typy plików: SRT lub WebVTT"
     },
     "switch_to_raw_html_editor_4c9ac7de": {
         "message": "Przełącz na edytor nieprzetworzonego HTML"
@@ -1072,6 +1120,9 @@
     },
     "wiki_home_9cd54d0": {
         "message": "Wiki — Strona główna"
+    },
+    "yes_dde87d5": {
+        "message": "Tak"
     },
     "yesterday_at_date_1aa6d18e": {
         "message": "Wczoraj o godz. { date }"

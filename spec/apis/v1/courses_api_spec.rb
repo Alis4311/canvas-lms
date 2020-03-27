@@ -142,7 +142,7 @@ describe Api::V1::Course do
     end
 
     it "includes the course nickname if one is set" do
-      @me.course_nicknames[@course1.id] = 'nickname'
+      @me.set_preference(:course_nicknames, @course1.id, 'nickname')
       json = @test_api.course_json(@course1, @me, {}, [], [])
       expect(json['name']).to eq 'nickname'
       expect(json['original_name']).to eq @course1.name
@@ -213,6 +213,7 @@ describe Api::V1::Course do
     describe "current_grading_period_scores" do
       before(:each) do
         @course.grading_standard_enabled = true
+        @course.default_post_policy.update!(post_manually: false)
         create_grading_periods_for(@course, grading_periods: [:current, :future])
 
         current_assignment = @course.assignments.create!(
@@ -221,13 +222,15 @@ describe Api::V1::Course do
           points_possible: 10
         )
         current_assignment.grade_student(@student, grader: @teacher, score: 2)
+        current_assignment.unmute!
+
         unposted_current_assignment = @course.assignments.create!(
           title: "Current",
           due_at: 2.days.ago,
-          points_possible: 10,
-          muted: true
+          points_possible: 10
         )
         unposted_current_assignment.grade_student(@student, grader: @teacher, score: 9)
+        unposted_current_assignment.mute!
 
         future_assignment = @course.assignments.create!(
           title: "Future",
@@ -235,6 +238,7 @@ describe Api::V1::Course do
           points_possible: 10,
         )
         future_assignment.grade_student(@student, grader: @teacher, score: 7)
+        future_assignment.unmute!
 
         @course.save!
         @me = @teacher
@@ -594,7 +598,7 @@ describe CoursesController, type: :request do
     c2 = course_with_student(user: @student, course_name: 'abc', active_all: true).course
     c3 = course_with_student(user: @student, course_name: 'jkl', active_all: true).course
     c4 = course_with_student(user: @student, course_name: 'xyz', active_all: true).course
-    @student.course_nicknames[c4.id] = 'ghi'; @student.save!
+    @student.set_preference(:course_nicknames, c4.id, 'ghi')
     json = api_call(:get, "/api/v1/courses.json", controller: 'courses', action: 'index', format: 'json')
     expect(json.map { |course| course['name'] }).to eq %w(abc def ghi jkl)
   end
@@ -705,8 +709,8 @@ describe CoursesController, type: :request do
     end
 
     it "should use the caller's course nickname, not the subject's" do
-      @student.course_nicknames[@course.id] = 'terrible'; @student.save!
-      @admin.course_nicknames[@course.id] = 'meh'; @admin.save!
+      @student.set_preference(:course_nicknames, @course.id, 'terrible')
+      @admin.set_preference(:course_nicknames, @course.id, 'meh')
       json = api_call_as_user(@admin, :get, "/api/v1/users/#{@student.id}/courses",
                               { :user_id => @student.to_param, :controller => 'courses', :action => 'user_index',
                                 :format => 'json' })
@@ -3725,7 +3729,6 @@ describe CoursesController, type: :request do
       end
 
       it "should update settings" do
-        @course.enable_feature!(:new_gradebook)
         @course.root_account.enable_feature!(:filter_speed_grader_by_student_group)
         @course.enable_feature!(:final_grades_override)
         expect(Auditors::Course).to receive(:record_updated).
@@ -4319,6 +4322,36 @@ describe CoursesController, type: :request do
           "unposted_final_score" => 60.0,
           "grading_period_id" => grading_period.id
         })
+      end
+    end
+  end
+end
+describe CoursesController, type: :request do
+  describe "/quizzes" do
+    context "as teacher" do
+
+      before :once do
+        Account.default.enable_feature!(:newquizzes_on_quiz_page)
+        @course = Course.create!
+        @user = course_with_teacher(course: @course, active_all: true).user
+        @course.enable_feature!(:quizzes_next)
+        @options = { controller: "courses", action: "new_quizzes_selection_update", format: "json", id: @course.id }
+      end
+
+      it "should update settings" do
+        json = api_call(:put, "/api/v1/courses/#{@course.id}/quizzes", @options, {
+            newquizzes_engine_selected: true
+        })
+        engine = json.dig('engine_selected', 'user_id')
+        expect(engine).to include({
+          'newquizzes_engine_selected' => 'true'
+        })
+        @course.reload
+        user_id = @user.id
+        selection_obj = @course.settings[:engine_selected][:user_id]
+        expiration = Time.zone.today + 30.days
+        expect(selection_obj[:newquizzes_engine_selected]).to eq 'true'
+        expect(selection_obj[:expiration]).to eq expiration
       end
     end
   end

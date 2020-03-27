@@ -18,6 +18,7 @@
 
 import $ from 'jquery'
 import React from 'react'
+import _ from 'underscore'
 import SectionCollection from 'compiled/collections/SectionCollection'
 import Assignment from 'compiled/models/Assignment'
 import DueDateList from 'compiled/models/DueDateList'
@@ -118,11 +119,9 @@ QUnit.module('EditView', {
       MODERATED_GRADING_ENABLED: true,
       MODERATED_GRADING_MAX_GRADER_COUNT: 2,
       VALID_DATE_RANGE: {},
+      use_rce_enhancements: true,
       COURSE_ID: 1
     })
-    // Sometimes TinyMCE has stuff on the dom that causes issues, likely from things that
-    // don't clean up properly, we make sure that these run in a clean tiny state each time
-    tinymce.remove()
     this.server = sinon.fakeServer.create()
     sandbox.fetch.mock('path:/api/v1/courses/1/lti_apps/launch_definitions', 200)
   },
@@ -158,47 +157,7 @@ test('rejects missing group set for group assignment', function() {
   equal(errors.newGroupCategory[0].message, 'Please create a group set')
 })
 
-test('validates positive points possible when the grading type is "letter grade"', function() {
-  const view = this.editView()
-  const data = {points_possible: '1', grading_type: 'letter_grade'}
-  const errors = view._validatePointsRequired(data, [])
-  equal(
-    errors.points_possible[0].message,
-    'Points possible must be greater than 0 for selected grading type'
-  )
-})
-
-test('invalidates 0 points possible when the grading type is "letter grade"', function() {
-  const view = this.editView()
-  const data = {points_possible: '0', grading_type: 'letter_grade'}
-  const errors = view._validatePointsRequired(data, [])
-  equal(
-    errors.points_possible[0].message,
-    'Points possible must be greater than 0 for selected grading type'
-  )
-})
-
-test('invalidates negative points possible when the grading type is "letter grade"', function() {
-  const view = this.editView()
-  const data = {points_possible: '-1', grading_type: 'letter_grade'}
-  const errors = view._validatePointsRequired(data, [])
-  equal(
-    errors.points_possible[0].message,
-    'Points possible must be greater than 0 for selected grading type'
-  )
-})
-
-test('invalidates blank points possible when the grading type is "letter grade"', function() {
-  const view = this.editView()
-  const data = {points_possible: '', grading_type: 'letter_grade'}
-  const errors = view._validatePointsRequired(data, [])
-  equal(
-    errors.points_possible[0].message,
-    'Points possible must be greater than 0 for selected grading type'
-  )
-})
-
-test('invalidates non-numeric points possible when the grading type is "letter grade"', function() {
+test('rejects a letter for points_possible', function() {
   const view = this.editView()
   const data = {points_possible: 'a'}
   const errors = view.validateBeforeSave(data, [])
@@ -248,6 +207,16 @@ test('adds and removes student group', function() {
   ENV.ASSIGNMENT_GROUPS = [{id: 1, name: 'assignment group 1'}]
   const view = this.editView()
   equal(view.assignment.toView().groupCategoryId, null)
+})
+
+test('does not allow point value of -1 or less if grading type is letter', function() {
+  const view = this.editView()
+  const data = {points_possible: '-1', grading_type: 'letter_grade'}
+  const errors = view._validatePointsRequired(data, [])
+  equal(
+    errors.points_possible[0].message,
+    'Points possible must be 0 or more for selected grading type'
+  )
 })
 
 test('requires name to save assignment', function() {
@@ -336,8 +305,16 @@ test('does show error message on assignment point change without submissions', f
   notOk(view.$el.find('#point_change_warning:visible').attr('aria-expanded'))
 })
 
-test('unchecking "has group category" removes the group category id', function() {
+test('does not allow point value of "" if grading type is letter', function() {
   const view = this.editView()
+  const data = {points_possible: '', grading_type: 'letter_grade'}
+  const errors = view._validatePointsRequired(data, [])
+  equal(
+    errors.points_possible[0].message,
+    'Points possible must be 0 or more for selected grading type'
+  )
+
+  // removes student group
   view.$('#has_group_category').click()
   equal(view.getFormData().groupCategoryId, null)
 })
@@ -1618,10 +1595,7 @@ QUnit.module('EditView#validateGraderCount', hooks => {
 QUnit.module('EditView#renderModeratedGradingFormFieldGroup', suiteHooks => {
   let view
   let server
-  const availableModerators = [
-    {name: 'John Doe', id: '21'},
-    {name: 'Jane Doe', id: '89'}
-  ]
+  const availableModerators = [{name: 'John Doe', id: '21'}, {name: 'Jane Doe', id: '89'}]
 
   suiteHooks.beforeEach(() => {
     fixtures.innerHTML = `

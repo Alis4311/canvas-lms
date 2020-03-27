@@ -166,7 +166,8 @@ module Importers
 
         # be very explicit about draft state courses, but be liberal toward legacy courses
         if course.wiki.has_no_front_page
-          if migration.for_course_copy? && (source = migration.source_course || Course.where(id: migration.migration_settings[:source_course_id]).first)
+          if migration.for_course_copy? && !migration.for_master_course_import? &&
+              (source = migration.source_course || Course.where(id: migration.migration_settings[:source_course_id]).first)
             mig_id = migration.content_export.create_key(source.wiki.front_page)
             if new_front_page = course.wiki_pages.where(migration_id: mig_id).first
               course.wiki.set_front_page_url!(new_front_page.url)
@@ -209,6 +210,13 @@ module Importers
         migration.workflow_state = :imported unless post_processing?(migration)
         migration.save
 
+        if migration.for_master_course_import? && migration.migration_settings[:publish_after_completion]
+          if course.unpublished?
+            # i could just do it directly but this way preserves the audit trail
+            course.update_one({:event => 'offer'}, migration.user, :blueprint_sync)
+          end
+        end
+
         if course.changed?
           course.save!
         else
@@ -216,7 +224,6 @@ module Importers
         end
 
         clear_assignment_and_quiz_caches(migration)
-        DueDateCacher.recompute_course(course, update_grades: true, executing_user: migration.user)
       end
 
       migration.trigger_live_events!
@@ -373,7 +380,10 @@ module Importers
 
     def self.clear_assignment_and_quiz_caches(migration)
       assignments = migration.imported_migration_items_by_class(Assignment).select(&:update_cached_due_dates?)
-      Assignment.clear_cache_keys(assignments, :availability) if assignments.any?
+      if assignments.any?
+        Assignment.clear_cache_keys(assignments, :availability)
+        DueDateCacher.recompute_course(migration.context, assignments: assignments, update_grades: true, executing_user: migration.user)
+      end
       quizzes = migration.imported_migration_items_by_class(Quizzes::Quiz).select(&:should_clear_availability_cache)
       Quizzes::Quiz.clear_cache_keys(quizzes, :availability) if quizzes.any?
     end

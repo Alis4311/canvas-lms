@@ -192,6 +192,7 @@ describe MasterCourses::MasterMigration do
       att_to = @copy_to.attachments.where(:migration_id => mig_id(att)).first
       expect(att_to).to be_present
       cm1 = @migration.migration_results.first.content_migration
+      expect(cm1.source_course_id).to eq @copy_from.id
       expect(cm1.migration_settings[:imported_assets]["DiscussionTopic"]).to eq topic_to.id.to_s
       expect(cm1.migration_settings[:imported_assets]["Attachment"]).to eq att_to.id.to_s
 
@@ -1050,6 +1051,31 @@ describe MasterCourses::MasterMigration do
       expect(@copy_to.active_context_modules.where(:name => "module 2 B").first!.content_tags.active.map { |tag| tag.content.id }).to eq [to_assignment_2.id]
     end
 
+    it "should not restore content tags in a deleted module" do
+      @copy_to = course_factory
+      sub = @template.add_child_course!(@copy_to)
+
+      mod = @copy_from.context_modules.create!(:name => "module")
+      assmt = @copy_from.assignments.create!(:title => "assignment")
+      tag = mod.add_item({:id => assmt.id, :type => 'assignment'})
+
+      run_master_migration
+
+      tag_to = @copy_to.context_module_tags.first
+      mod_to = @copy_to.context_modules.first
+      mod_to.destroy
+      expect(tag_to.reload).to be_deleted
+
+      Timecop.freeze(1.minute.from_now) do
+        [mod, assmt, tag].each(&:touch) # re-migrate everything
+      end
+
+      run_master_migration
+
+      expect(mod_to.reload).to be_deleted
+      expect(tag_to.reload).to be_deleted
+    end
+
     it "overwrites/removes availability dates and settings when pushing a locked quiz" do
       @copy_to = course_factory
       sub = @template.add_child_course!(@copy_to)
@@ -1774,6 +1800,32 @@ describe MasterCourses::MasterMigration do
       expect(@bank_to.learning_outcome_alignments.first.learning_outcome).to eq @lo_to
     end
 
+    it "should copy a question bank alignment even if the outcome and bank have already been synced and the outcome is nested in another group" do
+      @copy_to = course_factory
+      sub = @template.add_child_course!(@copy_to)
+
+      @og = @copy_from.learning_outcome_groups.create!({:title => 'outcome group'})
+      @copy_from.root_outcome_group.adopt_outcome_group(@og)
+
+      @lo = @copy_from.account.created_learning_outcomes.new(:context => @copy_from.account, :short_description => "whee", :workflow_state => 'active')
+      @lo.data = {:rubric_criterion=>{:mastery_points=>2, :ratings=>[{:description=>"e", :points=>50}, {:description=>"me", :points=>2},
+        {:description=>"Does Not Meet Expectations", :points=>0.5}], :description=>"First outcome", :points_possible=>5}}
+      @lo.save!
+      @og.add_outcome(@lo)
+
+      run_master_migration
+
+      Timecop.freeze(2.minutes.from_now) do
+        @bank = @copy_from.assessment_question_banks.create!(:title => 'bank')
+        aq = @bank.assessment_questions.create!(:question_data => {'question_name' => 'test question', 'question_type' => 'essay_question'})
+        @lo.align(@bank, @copy_from)
+      end
+
+      run_master_migration
+      @bank_to = @copy_to.assessment_question_banks.where(:migration_id => mig_id(@bank)).first
+      expect(@bank_to.learning_outcome_alignments.first.learning_outcome).to eq @lo
+    end
+
     it "preserves account question bank references" do
       @copy_to = course_factory
       sub = @template.add_child_course!(@copy_to)
@@ -2053,6 +2105,28 @@ describe MasterCourses::MasterMigration do
       expect(mod2_to.reload.prerequisites).to be_empty
     end
 
+    it "copies module requirements (and lack thereof)" do
+      @copy_to = course_factory
+      @template.add_child_course!(@copy_to)
+
+      mod1 = @copy_from.context_modules.create! :name => 'mod'
+      page = @copy_from.wiki_pages.create!(:title => "some page")
+      page_tag = mod1.add_item({:id => page.id, :type => 'wiki_page', :indent => 1})
+      mod1.update_attributes(:completion_requirements => [{:id => page_tag.id, :type => 'must_view'}])
+
+      run_master_migration
+
+      mod1_to = @copy_to.context_modules.where(:migration_id => mig_id(mod1)).first
+      page_tag_to = mod1_to.content_tags.first
+      expect(mod1_to.completion_requirements).to eq([{:id => page_tag_to.id, :type => 'must_view'}])
+
+      Timecop.freeze(1.minute.from_now) do
+        mod1.update_attributes(:completion_requirements => [])
+      end
+      run_master_migration
+      expect(mod1_to.reload.completion_requirements).to eq([])
+    end
+
     it "should copy the lack of a module unlock date" do
       @copy_to = course_factory
       @template.add_child_course!(@copy_to)
@@ -2179,6 +2253,20 @@ describe MasterCourses::MasterMigration do
       run_master_migration
 
       expect(a_to.reload.external_tool_tag).to eq tag # don't change
+    end
+
+    it "can publish a course after initial sync if requested" do
+      @copy_to = course_factory
+      @sub = @template.add_child_course!(@copy_to)
+
+      run_master_migration
+      expect(@copy_to.reload).to be_unpublished
+
+      @copy_to2 = course_factory
+      @template.add_child_course!(@copy_to2)
+
+      run_master_migration(:publish_after_initial_sync => true)
+      expect(@copy_to2.reload).to be_available
     end
 
     context "caching" do

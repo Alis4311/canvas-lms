@@ -199,6 +199,8 @@ class RCEWrapper extends React.Component {
   constructor(props) {
     super(props)
 
+    this.editor = null // my tinymce editor instance
+
     // interface consistent with editorBox
     this.get_code = this.getCode
     this.set_code = this.setCode
@@ -327,12 +329,29 @@ class RCEWrapper extends React.Component {
     this.contentInserted(element)
   }
 
-  // inserting an iframe in tinymce (as is often the case with
-  // embedded content) causes it to wrap it in a span
-  // and it's often inserted into a <p> on top of that.  Find the
-  // iframe and use it to flash the indicator.
   insertEmbedCode(code) {
     const editor = this.mceInstance()
+    // tinymce treats iframes uniquely, and doesn't like adding attributes
+    // once it's in the editor, and I'd rather not parse the incomming html
+    // string with a regex, so let's create a temp copy, then add a title
+    // attribute if one doesn't exist. This will let screenreaders announce
+    // that there's some embedded content helper
+    // From what I've read, "title" is more reliable than "aria-label" for
+    // elements like iframes and embeds.
+    const temp = document.createElement('div')
+    temp.innerHTML = code
+    const code_elem = temp.firstElementChild
+    if (code_elem) {
+      if (!code_elem.hasAttribute('title') && !code_elem.hasAttribute('aria-label')) {
+        code_elem.setAttribute('title', formatMessage('embedded content'))
+      }
+      code = code_elem.outerHTML
+    }
+
+    // inserting an iframe in tinymce (as is often the case with
+    // embedded content) causes it to wrap it in a span
+    // and it's often inserted into a <p> on top of that.  Find the
+    // iframe and use it to flash the indicator.
     const element = contentInsertion.insertContent(editor, code)
     const ifr = element && element.querySelector && element.querySelector('iframe')
     if (ifr) {
@@ -363,7 +382,7 @@ class RCEWrapper extends React.Component {
       if (width > defaultImageSize && image.width > image.height) {
         width = defaultImageSize
         height = (image.height * width) / image.width
-      } else if (height > defaultImageSize && image.height > image.width) {
+      } else if (height > defaultImageSize) {
         height = defaultImageSize
         width = (image.width * height) / image.height
       }
@@ -379,14 +398,13 @@ class RCEWrapper extends React.Component {
       width = `${fileMetaProps.name.length}rem`
       height = '1rem'
     }
-    // this used to be an image with src="data:image/gif...", but it got autosaved as src="blob:"
-    // which cannot be restored. Now it doesn't delete with one click of BS, but that should
-    // only be necessary if the upload fails, and we should take care of that for the user anyway.
     const markup = `
-    <div
+    <img
+      alt="${formatMessage('Loading...')}"
+      src="data:image/gif;base64,R0lGODlhAQABAIAAAMLCwgAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw=="
       data-placeholder-for="${fileMetaProps.name}"
-      style="width: ${width}; height: ${height}; border: solid 1px #8B969E; background: #c2c2c2; display:inline-block; padding:5px 0 0 5px"
-    >${formatMessage('Loading...')}</div>`
+      style="width: ${width}; height: ${height}; border: solid 1px #8B969E;"
+    />`
 
     this.insertCode(markup)
   }
@@ -427,6 +445,9 @@ class RCEWrapper extends React.Component {
   }
 
   mceInstance() {
+    if (this.editor) {
+      return this.editor
+    }
     const editors = this.props.tinymce.editors || []
     return editors.filter(ed => ed.id === this.props.textareaId)[0]
   }
@@ -448,7 +469,7 @@ class RCEWrapper extends React.Component {
     this.props.handleUnmount && this.props.handleUnmount()
   }
 
-  onRemove() {
+  onRemove = () => {
     Bridge.detachEditor(this)
     this.props.onRemove && this.props.onRemove(this)
   }
@@ -502,7 +523,7 @@ class RCEWrapper extends React.Component {
     return this.state.focused
   }
 
-  handleFocus() {
+  handleFocus(_event) {
     if (!this.state.focused) {
       this.setState({focused: true})
       Bridge.focusEditor(this)
@@ -586,17 +607,17 @@ class RCEWrapper extends React.Component {
     }
   }
 
-  handleFocusEditor() {
+  handleFocusEditor = (event, _editor) => {
     // use .active to put a focus ring around the content area
     // when the editor has focus. This isn't perfect, but it's
     // what we've got for now.
     const ifr = this.iframe
     ifr && ifr.parentElement.classList.add('active')
 
-    this.handleFocus()
+    this.handleFocus(event)
   }
 
-  handleBlurEditor(event) {
+  handleBlurEditor = (event, _editor) => {
     const ifr = this.iframe
     ifr && ifr.parentElement.classList.remove('active')
     this.handleBlur(event)
@@ -640,8 +661,10 @@ class RCEWrapper extends React.Component {
     editor.on('keydown', this.handleShortcutKeyShortcut)
   }
 
-  onInit(_e, editor) {
+  onInit = (_event, editor) => {
     editor.rceWrapper = this
+    this.editor = editor
+
     this.initKeyboardShortcuts(this._elementRef, editor)
     if (document.body.classList.contains('Underline-All-Links__enabled')) {
       this.iframe.contentDocument.body.classList.add('Underline-All-Links__enabled')
@@ -746,10 +769,12 @@ class RCEWrapper extends React.Component {
       try {
         const autosaved = this.getAutoSaved(this.autoSaveKey)
         if (autosaved && autosaved.content) {
-          if (autosaved.content !== editor.getContent({no_events: true})) {
+          const editorContent = editor.getContent({no_events: true})
+          const autosavedContent = this.patchAutosavedContent(autosaved.content)
+          if (autosaved.content !== editorContent) {
             this.setState({
               confirmAutoSave: true,
-              autoSavedContent: autosaved.content
+              autoSavedContent: autosavedContent
             })
           } else {
             this.storage.removeItem(this.autoSaveKey)
@@ -788,6 +813,19 @@ class RCEWrapper extends React.Component {
       }
       this.storage.removeItem(this.autoSaveKey)
     })
+  }
+
+  // if a placeholder image shows up in autosaved content, we have to remove it
+  // because the data url gets converted to a blob, which is not valid when restored.
+  // besides, the placeholder is intended to be temporary while the file
+  // is being uploaded
+  patchAutosavedContent(content) {
+    const temp = document.createElement('div')
+    temp.innerHTML = content
+    temp.querySelectorAll('img[data-placeholder-for]').forEach(placeholder => {
+      placeholder.parentElement.removeChild(placeholder)
+    })
+    return temp.innerHTML
   }
 
   getAutoSaved(key) {
@@ -1093,7 +1131,6 @@ class RCEWrapper extends React.Component {
 
   render() {
     const {trayProps, ...mceProps} = this.props
-    mceProps.editorOptions.statusbar = false
 
     return (
       <div
@@ -1123,13 +1160,13 @@ class RCEWrapper extends React.Component {
           textareaName={mceProps.name}
           init={this.wrapOptions(mceProps.editorOptions)}
           initialValue={mceProps.defaultContent}
-          onInit={this.onInit.bind(this)}
-          onClick={this.handleFocusEditor.bind(this)}
-          onKeypress={this.handleFocusEditor.bind(this)}
-          onActivate={this.handleFocusEditor.bind(this)}
-          onRemove={this.onRemove.bind(this)}
-          onFocus={this.handleFocusEditor.bind(this)}
-          onBlur={this.handleBlurEditor.bind(this)}
+          onInit={this.onInit}
+          onClick={this.handleFocusEditor}
+          onKeypress={this.handleFocusEditor}
+          onActivate={this.handleFocusEditor}
+          onRemove={this.onRemove}
+          onFocus={this.handleFocusEditor}
+          onBlur={this.handleBlurEditor}
           onNodeChange={this.onNodeChange}
         />
         <StatusBar

@@ -423,14 +423,9 @@
 #           "deprecated": true,
 #           "deprecation_notice": "2020-02-26",
 #           "deprecation_effective": "2020-06-03",
-#           "deprecation_description": "Use hidden_submissions_count to determine whether an assignment has feedback that has not been posted to students.",
+#           "deprecation_description": "A new attribute will be included in a future release to determine whether an assignment has feedback that has not been posted to students.",
 #           "description": "For courses using Old Gradebook, indicates whether the assignment is muted. For courses using New Gradebook, true if the assignment has any unposted submissions, otherwise false. To see the posted status of submissions, check the 'posted_attribute' on Submission.",
 #           "type": "boolean"
-#         },
-#         "hidden_submissions_count": {
-#           "description": "The number of submissions that are unposted and have a grade or instructor comments.",
-#           "example": 1,
-#           "type": "integer"
 #         },
 #         "points_possible": {
 #           "description": "the maximum points possible for the assignment",
@@ -985,7 +980,7 @@ class AssignmentsApiController < ApplicationController
   # @argument assignment[points_possible] [Float]
   #   The maximum points possible on the assignment.
   #
-  # @argument assignment[grading_type] ["pass_fail"|"percent"|"letter_grade"|"gpa_scale"|"points"]
+  # @argument assignment[grading_type] ["pass_fail"|"percent"|"letter_grade"|"gpa_scale"|"points"|"not_graded"]
   #  The strategy used for grading the assignment.
   #  The assignment defaults to "points" if this field is omitted.
   #
@@ -1170,7 +1165,7 @@ class AssignmentsApiController < ApplicationController
   # @argument assignment[points_possible] [Float]
   #   The maximum points possible on the assignment.
   #
-  # @argument assignment[grading_type] ["pass_fail"|"percent"|"letter_grade"|"gpa_scale"|"points"]
+  # @argument assignment[grading_type] ["pass_fail"|"percent"|"letter_grade"|"gpa_scale"|"points"|"not_graded"]
   #  The strategy used for grading the assignment.
   #  The assignment defaults to "points" if this field is omitted.
   #

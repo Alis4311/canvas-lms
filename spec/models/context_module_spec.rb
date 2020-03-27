@@ -985,6 +985,7 @@ describe ContextModule do
 
     it "should mark progression completed for min_score on discussion topic assignment" do
       asmnt = assignment_model(:submission_types => "discussion_topic", :points_possible => 10)
+      asmnt.ensure_post_policy(post_manually: false)
       topic = asmnt.discussion_topic
       @course.offer
       course_with_student(:active_all => true, :course => @course)
@@ -1000,10 +1001,8 @@ describe ContextModule do
 
       topic.discussion_entries.create!(:message => "hi", :user => @student)
 
-      sub = asmnt.reload.submissions.first
-      sub.score = 5
-      sub.workflow_state = 'graded'
-      sub.save!
+      asmnt.reload.submissions.first
+      asmnt.grade_student(@student, grader: @teacher, score: 5)
 
       p = mod.evaluate_for(@student)
       expect(p.requirements_met).to eq [{:type=>"min_score", :min_score=>5, :id=>tag.id}]

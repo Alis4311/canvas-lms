@@ -500,7 +500,7 @@ CanvasRails::Application.routes.draw do
   get 'external_content/retrieve/oembed' => 'external_content#oembed_retrieve', as: :external_content_oembed_retrieve
   get 'external_content/cancel/:service' => 'external_content#cancel', as: :external_content_cancel
 
-  %w(account course).each do |context|
+  %w(account course group).each do |context|
     prefix = "#{context}s/:#{context}_id"
     post "#{prefix}/deep_linking_response", controller: 'lti/ims/deep_linking', action: :deep_linking_response, as: "#{context}_deep_linking_response"
   end
@@ -978,6 +978,7 @@ CanvasRails::Application.routes.draw do
       get 'courses/:course_id/users', action: :users, as: 'course_users'
       get 'courses/:course_id/collaborations', controller: :collaborations, action: :api_index, as: 'course_collaborations_index'
       delete 'courses/:course_id/collaborations/:id', controller: :collaborations, action: :destroy
+      put 'courses/:id/quizzes', action: 'new_quizzes_selection_update', as: 'course_new_quizzes_selection_update'
 
       # this api endpoint has been removed, it was redundant with just courses#users
       # we keep it around for backward compatibility though
@@ -1111,6 +1112,7 @@ CanvasRails::Application.routes.draw do
 
     scope(controller: :course_audit_api) do
       get 'audit/course/courses/:course_id', action: :for_course, as: 'audit_course_for_course'
+      get 'audit/course/accounts/:account_id', action: :for_account, as: 'audit_course_for_account'
     end
 
     scope(controller: :assignment_overrides) do
@@ -1544,6 +1546,11 @@ CanvasRails::Application.routes.draw do
       put 'users/self/communication_channels/:communication_channel_id/notification_preference_categories/:category', action: :update_preferences_by_category
     end
 
+    scope(controller: :notification_preference_overrides) do
+      get 'users/self/courses/:course_id/notifications_enabled', action: :enabled_for_context
+      put 'users/self/courses/:course_id/enable_notifications', action: :enable
+    end
+
     scope(controller: :comm_messages_api) do
       get 'comm_messages', action: :index, as: 'comm_messages'
     end
@@ -1620,7 +1627,6 @@ CanvasRails::Application.routes.draw do
     end
 
     scope(controller: :developer_keys) do
-      get 'developer_keys/:id', action: :show
       delete 'developer_keys/:id', action: :destroy
       put 'developer_keys/:id', action: :update
 
@@ -1760,6 +1766,7 @@ CanvasRails::Application.routes.draw do
 
     scope(controller: 'quizzes/quiz_assignment_overrides') do
       get "courses/:course_id/quizzes/assignment_overrides", action: :index, as: 'course_quiz_assignment_overrides'
+      get "courses/:course_id/new_quizzes/assignment_overrides", action: :new_quizzes, as: 'course_new_quizzes_assignment_overrides'
     end
 
     scope(controller: 'quizzes/quizzes_api') do
@@ -2236,6 +2243,12 @@ CanvasRails::Application.routes.draw do
     scope(:controller => :media_objects) do
       put 'media_objects/:media_object_id', action: 'update_media_object', as: :update_media_object
     end
+
+    scope(:controller => :media_tracks) do
+      get 'media_objects/:media_object_id/media_tracks', action: 'index', as: :list_media_tracks
+      put 'media_objects/:media_object_id/media_tracks', action: 'update', as: :update_media_tracks
+    end
+
   end
 
     # this is not a "normal" api endpoint in the sense that it is not documented or

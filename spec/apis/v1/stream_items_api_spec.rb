@@ -498,11 +498,11 @@ describe UsersController, type: :request do
   end
 
   it "should format ungraded Submission with comments" do
-    #set @domain_root_account
     @domain_root_account = Account.default
     @domain_root_account.update(:default_time_zone => 'America/Denver')
 
     @assignment = @course.assignments.create!(:title => 'assignment 1', :description => 'hai', :points_possible => '14.2', :submission_types => 'online_text_entry')
+    @assignment.unmute!
     @teacher = User.create!(:name => 'teacher')
     @course.enroll_teacher(@teacher)
     @sub = @assignment.grade_student(@user, grade: nil, grader: @teacher).first
@@ -534,7 +534,7 @@ describe UsersController, type: :request do
       'excused' => false,
       'grader_id' => @teacher.id,
       'graded_at' => nil,
-      'posted_at' => nil,
+      'posted_at' => @sub.posted_at.as_json,
       'score' => nil,
       'entered_score' => nil,
       'html_url' => "http://www.example.com/courses/#{@course.id}/assignments/#{@assignment.id}/submissions/#{@user.id}",

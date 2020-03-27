@@ -3,6 +3,7 @@
     "message": "Verificador de acessibilidade:"
   },
   "add_8523c19b": { "message": "Adicionar" },
+  "add_another_f4e50d57": { "message": "Adicionar outro" },
   "add_cc_subtitles_55f0394e": { "message": "Adicionar legenda" },
   "align_11050992": { "message": "Alinhar" },
   "align_center_ca078feb": { "message": "Centralizar" },
@@ -28,6 +29,9 @@
   "audio_player_for_title_20cc70d": {
     "message": "Reprodutor de áudio para { title }"
   },
+  "auto_saved_content_exists_would_you_like_to_load_t_fee528f2": {
+    "message": "Conteúdo com salvamento automático existe. Gostaria de carregar o conteúdo com salvamento automático em seu lugar?"
+  },
   "automatically_open_an_in_line_preview_preview_disp_ed784ffe": {
     "message": "Automaticamente abre uma pré-visualização em linha. (Pré-visualização obtida apenas após salvar)"
   },
@@ -38,14 +42,23 @@
     "message": "Lista não ordenada circular"
   },
   "clear_selected_file_82388e50": { "message": "Limpar arquivo selecionado" },
+  "clear_selected_file_filename_2fe8a58e": {
+    "message": "Limpar arquivo selecionado: { filename }"
+  },
   "click_any_page_to_insert_a_link_to_that_page_ac920c02": {
     "message": "Clique em qualquer página para inserir um link para para essa página."
   },
   "click_to_embed_imagename_c41ea8df": {
     "message": "Clique para incorporar { imageName }"
   },
+  "click_to_hide_preview_3c707763": {
+    "message": "Clique para ocultar a pré-visualização"
+  },
   "click_to_insert_a_link_into_the_editor_c19613aa": {
     "message": "Clique para inserir um link no editor."
+  },
+  "click_to_show_preview_faa27051": {
+    "message": "Clique para mostrar a pré-visualização"
   },
   "close_a_menu_or_dialog_also_returns_you_to_the_edi_739079e6": {
     "message": "Feche um menu ou diálogo. Também lhe retorna para a área do editor"
@@ -96,6 +109,7 @@
   "display_text_link_opens_in_a_new_tab_75e9afc9": {
     "message": "Exibir link de texto (abre em uma nova aba)"
   },
+  "document_678cd7bf": { "message": "Documento" },
   "documents_81393201": { "message": "Documentos" },
   "done_54e3d4b6": { "message": "Feito" },
   "drag_a_file_here_1bf656d5": { "message": "Arrastar um arquivo aqui" },
@@ -120,6 +134,8 @@
   "embed_preview_2d741e1f": { "message": "Incorporar pré-visualização" },
   "embed_video_a97a64af": { "message": "Incorporar vídeo" },
   "embed_video_code_703e10f2": { "message": "Incorporar código de vídeo" },
+  "embedded_content_aaeb4d3d": { "message": "conteúdo incorporado" },
+  "equation_1c5ac93c": { "message": "Equação" },
   "error_uploading_video_audio_recording_16d9730a": {
     "message": "Erro ao carregar vídeo/gravação de mídia"
   },
@@ -142,6 +158,9 @@
     "message": "Foca a barra de ferramentas de contexto"
   },
   "formatting_5b143aa8": { "message": "Formatação" },
+  "found_auto_saved_content_3f6e4ca5": {
+    "message": "Encontrou conteúdo com salvamento automático"
+  },
   "found_count_plural_0_results_one_result_other_resu_46aeaa01": {
     "message": "Encontrou { count, plural,\n     =0 {# resultados}\n    one {# resultado}\n  other {# resultados}\n}"
   },
@@ -159,10 +178,12 @@
   "heading_3_2c83de44": { "message": "Título 3" },
   "heading_4_b2e74be7": { "message": "Título 4" },
   "height_69b03e15": { "message": "Altura" },
+  "image_8ad06": { "message": "Imagem" },
   "image_options_5412d02c": { "message": "Opções de imagem" },
   "image_options_tray_90a46006": { "message": "Bandeja de opções de imagem" },
   "images_7ce26570": { "message": "Imagens" },
   "increase_indent_6d550a4a": { "message": "Aumentar recuo" },
+  "insert_593145ef": { "message": "Inserir" },
   "insert_equella_links_49a8dacd": { "message": "Inserir links Equella" },
   "insert_link_6dc23cae": { "message": "Inserir link" },
   "insert_math_equation_57c6e767": {
@@ -204,6 +225,8 @@
   "no_alt_text_decorative_image_f318fc0e": {
     "message": "Sem texto alt (imagem decorativa)"
   },
+  "no_e16d9132": { "message": "Não" },
+  "no_file_chosen_9a880793": { "message": "Nenhum arquivo escolhido" },
   "no_results_940393cf": { "message": "Sem resultados." },
   "no_results_found_for_filterterm_ad1b04c8": {
     "message": "Nenhum resultado encontrado para { filterTerm }"
@@ -232,6 +255,7 @@
   },
   "posted_when_a578f5ab": { "message": "Postado: { when }" },
   "preformatted_d0670862": { "message": "Pré-formatado" },
+  "preview_53003fd2": { "message": "Pré-visualização" },
   "preview_a3f8f854": { "message": "PRÉ-VISUALIZAÇÃO" },
   "previous_page_928fc112": { "message": "Página anterior" },
   "published_c944a23d": { "message": "publicado" },
@@ -241,6 +265,9 @@
   "record_upload_media_5fdce166": { "message": "Gravar/fazer upload de mídia" },
   "recording_98da6bda": { "message": "Gravação" },
   "remove_link_d1f2f4d0": { "message": "Remover link" },
+  "restore_auto_save_deccd84b": {
+    "message": "Restaurar salvamento automático?"
+  },
   "rich_content_editor_2708ef21": { "message": "Editor de conteúdo avançado" },
   "right_to_left_ec223c81": { "message": "direita à esquerda" },
   "save_11a80ec3": { "message": "Salvar" },
@@ -278,6 +305,9 @@
   "submit_a3cc6859": { "message": "Enviar" },
   "subscript_59744f96": { "message": "Subscrito" },
   "superscript_8cb349a2": { "message": "Sobrescrito" },
+  "supported_file_types_srt_or_webvtt_7d827ed": {
+    "message": "Tipos de arquivos suportados: SRT ou WebVTT"
+  },
   "switch_to_raw_html_editor_4c9ac7de": {
     "message": "Alternar para editor html não processado"
   },
@@ -351,6 +381,7 @@
   },
   "width_x_height_px_ff3ccb93": { "message": "{ width } x { height }px" },
   "wiki_home_9cd54d0": { "message": "Página inicial do wiki" },
+  "yes_dde87d5": { "message": "Sim" },
   "your_webcam_may_already_be_in_use_6cd64c25": {
     "message": "Sua webcam já pode estar em uso."
   }

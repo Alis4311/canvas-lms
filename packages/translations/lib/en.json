@@ -5,6 +5,9 @@
   "add_8523c19b": {
     "message": "Add"
   },
+  "add_another_f4e50d57": {
+    "message": "Add another"
+  },
   "add_cc_subtitles_55f0394e": {
     "message": "Add CC/Subtitles"
   },
@@ -315,6 +318,9 @@
   "display_text_link_opens_in_a_new_tab_75e9afc9": {
     "message": "Display Text Link (Opens in a new tab)"
   },
+  "document_678cd7bf": {
+    "message": "Document"
+  },
   "documents_81393201": {
     "message": "Documents"
   },
@@ -380,6 +386,12 @@
   },
   "embed_video_code_703e10f2": {
     "message": "Embed Video Code"
+  },
+  "embedded_content_aaeb4d3d": {
+    "message": "embedded content"
+  },
+  "equation_1c5ac93c": {
+    "message": "Equation"
   },
   "error_loading_grades_e0b38f4d": {
     "message": "Error loading grades"
@@ -499,6 +511,9 @@
   "height_69b03e15": {
     "message": "Height"
   },
+  "image_8ad06": {
+    "message": "Image"
+  },
   "image_options_5412d02c": {
     "message": "Image Options"
   },
@@ -510,6 +525,9 @@
   },
   "increase_indent_6d550a4a": {
     "message": "Increase indent"
+  },
+  "insert_593145ef": {
+    "message": "Insert"
   },
   "insert_equella_links_49a8dacd": {
     "description": "Title for RCE button to insert links to Equella content",
@@ -672,6 +690,9 @@
   },
   "no_e16d9132": {
     "message": "No"
+  },
+  "no_file_chosen_9a880793": {
+    "message": "No file chosen"
   },
   "no_grade_3b4d7f3e": {
     "message": "No Grade"
@@ -935,6 +956,9 @@
   },
   "superscript_8cb349a2": {
     "message": "Superscript"
+  },
+  "supported_file_types_srt_or_webvtt_7d827ed": {
+    "message": "Supported file types: SRT or WebVTT"
   },
   "switch_to_raw_html_editor_4c9ac7de": {
     "message": "Switch to raw html editor"

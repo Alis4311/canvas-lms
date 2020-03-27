@@ -16,13 +16,13 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 require_relative "../../common"
-require_relative "../../helpers/gradezilla_common"
+require_relative "../../helpers/gradebook_common"
 require_relative "../../helpers/groups_common"
 require_relative "../../helpers/assignments_common"
 require_relative "../../helpers/quizzes_common"
 require_relative "../pages/speedgrader_page"
 require_relative "../pages/student_grades_page"
-require_relative "../pages/gradezilla_page"
+require_relative "../pages/gradebook_page"
 require_relative "../../assignments/page_objects/assignment_page"
 require_relative "../../assignments/page_objects/submission_detail_page"
 require 'benchmark'
@@ -30,7 +30,7 @@ require 'benchmark'
 describe 'Speedgrader' do
   include_context "in-process server selenium tests"
   include QuizzesCommon
-  include GradezillaCommon
+  include GradebookCommon
   include GroupsCommon
   include AssignmentsCommon
 
@@ -61,7 +61,6 @@ describe 'Speedgrader' do
   end
 
   before :once do
-    Account.default.enable_feature!(:new_gradebook)
     course_factory(active_all: true)
     @students = create_users_in_course(@course, 5, return_type: :record, name_prefix: "Student_")
   end
@@ -676,7 +675,7 @@ describe 'Speedgrader' do
     it 'navigates to gradebook via link' do
       # make sure gradebook link works
       expect_new_page_load {Speedgrader.gradebook_link.click}
-      expect(Gradezilla.grid).to be_displayed
+      expect(Gradebook.grid).to be_displayed
     end
   end
 
@@ -705,43 +704,6 @@ describe 'Speedgrader' do
       expect(f("#grade_container input")["readonly"]).to eq "true"
       expect(f("#closed_gp_notice")).to be_displayed
     end
-  end
-
-  context "mute/unmute dialogs" do
-    before(:once) do
-      @assignment = @course.assignments.create!(
-        grading_type: 'points',
-        points_possible: 10
-      )
-    end
-
-    before(:each) do
-      user_session(@teacher)
-    end
-
-    it "shows dialog when attempting to mute and mutes" do
-      @assignment.update(muted: false)
-
-      Speedgrader.visit(@course.id, @assignment.id)
-      f('#mute_link').click
-      expect(f('#mute_dialog').attribute('style')).not_to include('display: none')
-      f('button.btn-mute').click
-      @assignment.reload
-      expect(@assignment.muted?).to be true
-    end
-
-    it "shows dialog when attempting to unmute and unmutes" do
-      @assignment.update(muted: true)
-
-      get "/courses/#{@course.id}/gradebook/speed_grader?assignment_id=#{@assignment.id}#"
-      f('#mute_link').click
-      expect(f('#unmute_dialog').attribute('style')).not_to include('display: none')
-      f('button.btn-unmute').click
-      expect(f('#unmute_dialog')).not_to contain_css('button.btn-unmute')
-      @assignment.reload
-      expect(@assignment.muted?).to be false
-    end
-
   end
 
   private
